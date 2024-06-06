@@ -1,26 +1,27 @@
 package com.example.smsreceiver.presentation
 
 import android.app.Application
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.smsreceiver.db.SMSDatabase
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import com.example.smsreceiver.model.SMS
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 
 class SMSViewModel(
     application: Application
-): AndroidViewModel(application) {
+) : AndroidViewModel(application) {
 
-    private val dao = SMSDatabase.create(application)
+    var permissionsGranted by mutableStateOf(false)
 
-    val smsList = dao
-        .getAllSMS()
-        .map { it.reversed() }
-        .stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
-    )
+    val smsList = MutableStateFlow<List<SMS>>(listOf())
 
+    fun addSMSList(smsList: List<SMS>) {
+        this.smsList.update {
+            val currentList = it.toMutableList()
+            val newList = (currentList + smsList).sortedByDescending { it.date }.distinct()
+            newList
+        }
+    }
 }
